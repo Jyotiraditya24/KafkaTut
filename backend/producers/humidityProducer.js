@@ -1,23 +1,53 @@
-import { kafka } from "../kakfa/client.js"
+import { kafka } from "../kakfa/client.js";
 
 const producer = kafka.producer();
 
+async function startProducer() {
+    try {
+        await producer.connect();
+        console.log("✅ Producer connected");
 
-// i have to generate continous data lets say in percentage
-function generateHumidityData() {
-    const data = Math.ceil((Math.random() * 100)); //  generate a random number between 1 and 100
-    console.log("Humidity Generated " + data);
+        const intervalId = setInterval(async () => {
+            try {
+                await generateHumidityData();
+            } catch (error) {
+                console.error("❌ Error generating data:", error);
+            }
+        }, 500);
+
+        setTimeout(async () => {
+            clearInterval(intervalId);
+            console.log("⏹Stopping producer...");
+            try {
+                await producer.disconnect();
+                console.log(" Producer disconnected");
+            } catch (error) {
+                console.error("Error disconnecting producer:", error);
+            }
+        }, 10000);
+    } catch (error) {
+        console.log(" Error in startProducer:", error);
+    }
 }
 
-const intervalId = setInterval(() => {
-    generateHumidityData();
-}, 500)
-
-setTimeout(() => {
-    clearInterval(intervalId)
-}, 10000)
-
-
-async function sendHumidityData(){
-    
+//Generate & send data
+async function generateHumidityData() {
+    const data = Math.ceil(Math.random() * 100); // 1-100%
+    console.log("🌡️ Generated Humidity:", data);
+    await sendHumidityData(data);
 }
+
+// Send data to Kafka
+async function sendHumidityData(data) {
+    try {
+        await producer.send({
+            topic: "weather-topic",
+            messages: [{ key: String(data), value: JSON.stringify(data), partition: 0 }],
+        });
+        console.log("Sent Humidity Data:", data);
+    } catch (error) {
+        console.error("Error sending data:", error);
+    }
+}
+
+startProducer();
