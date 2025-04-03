@@ -4,10 +4,6 @@ import { kafka } from "../kakfa/client.js";
 import dotenv from "dotenv";
 
 dotenv.config();
-
-console.log("ENV VARIABLES:", process.env);
-
-
 const consumer = kafka.consumer({ groupId: 'weather-services' })
 
 let BUFFERSIZE = 100;
@@ -23,7 +19,7 @@ async function flushBuffer() {
     try {
         console.log(messageBuffer);
         await connectToDB();
-    
+
         await Sensor.insertMany(messageBuffer);
         console.log(`Inserted ${messageBuffer.length} documents`);
         messageBuffer = [] // Clear the buffer after insertion
@@ -52,26 +48,38 @@ async function getMessages() {
         await consumer.run({
             eachMessage: async ({ topic, partition, message }) => {
                 try {
+                    let parsedValue = null;
+
+                    if (message.value) {
+                        try {
+                            parsedValue = JSON.parse(message.value.toString()); // Parse JSON
+                        } catch (error) {
+                            console.error("❌ Error parsing message.value:", error);
+                            parsedValue = { value: "Invalid JSON", parameter: "Unknown" }; // Handle errors gracefully
+                        }
+                    }
+
                     let obj = {
                         topic: topic.toString(),
                         partition: partition.toString(),
-                        // key: message.key ? message.key.toString() : "null",
-                        value: message.value ? message.value.toString() : "null",
-                    }
+                        value: parsedValue?.value || "null",
+                        parameter: parsedValue?.parameter || "unknown",
+                    };
+
                     messageBuffer.push(obj);
+
                     if (messageBuffer.length >= BUFFERSIZE) {
                         await flushBuffer();
                     }
                 } catch (error) {
-                    console.error(" Error processing message:", error);
+                    console.error("❌ Error processing message:", error);
                 }
             },
         });
     } catch (error) {
-        console.error(" Error in consumer.run():", error);
+        console.error("❌ Error in consumer.run():", error);
     }
 }
-
 (async () => {
     await getConsumerConnection();
     await getMessages();

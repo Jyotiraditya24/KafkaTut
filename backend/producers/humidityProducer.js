@@ -32,7 +32,10 @@ async function startProducer() {
 
 //Generate & send data
 async function generateHumidityData() {
-    const data = Math.ceil(Math.random() * 100); // 1-100%
+    let data = {
+        value: Math.ceil(Math.random() * 100), // 1-100%
+        parameter: "humidity"
+    };
     console.log("🌡️ Generated Humidity:", data);
     await sendHumidityData(data);
 }

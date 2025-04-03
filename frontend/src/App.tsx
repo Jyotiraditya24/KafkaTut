@@ -1,35 +1,56 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [data, setData] = useState([]);
+
+  useEffect(()=>{
+     async function getData(){
+      const response = await fetch('http://localhost:3001/serverData');
+      const data  = await response.json();
+      setData(data);
+     }
+     getData();
+  },[])
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div className="overflow-x-auto p-4">
+      <table className="min-w-full border border-gray-300 shadow-md rounded-lg">
+        <thead>
+          <tr className="bg-gray-800 text-white text-left">
+            <th className="p-3">Topic</th>
+            <th className='p-3'>Parameter</th>
+            <th className="p-3">Partition</th>
+            <th className="p-3">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data?.map((d: any, index: number) => (
+            <tr
+              key={index}
+              className={`border-b border-gray-300 ${index % 2 === 0 ? "bg-gray-100" : "bg-white"
+                }`}
+            >
+              <td className="p-3">{d.topic}</td>
+              <td className='p-3'>{d.parameter}</td>
+              <td className="p-3">{d.partition}</td>
+              <td className="p-3">{d.value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
   )
 }
 
 export default App
+
+
+
+createdAt:"2025-04-02T17:01:07.018Z"
+partition:"0"
+topic:"weather-topic"
+updatedAt:"2025-04-02T17:01:07.018Z"
+value:"61"
+__v:0
+_id:"67ed6d53e4b07cddb827e02a"
